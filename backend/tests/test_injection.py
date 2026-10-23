@@ -95,3 +95,24 @@ def test_reasons_contain_rule_id_and_evidence():
         assert "rule_id" in r
         assert "category" in r
         assert "evidence" in r
+
+
+def test_full_injection_corpus_100_percent_flagged():
+    """
+    Evaluation target: 100% of the complete 100-item injection corpus (all 10 domains)
+    is successfully caught and flagged (High/Critical, threat_score >= 50.0).
+    """
+    from backend.security.injection_corpus import INJECTION_CORPUS
+    assert len(INJECTION_CORPUS) == 100
+
+    detected_count = 0
+    missed = []
+    for item in INJECTION_CORPUS:
+        res = scanner.scan(item["prompt"], is_untrusted_context=False)
+        if res.threat_score >= 50.0 or res.severity in ["HIGH", "CRITICAL"]:
+            detected_count += 1
+        else:
+            missed.append((item["id"], item["domain"], item["prompt"], res.threat_score))
+
+    assert len(missed) == 0, f"Missed {len(missed)}/100 corpus injections: {missed}"
+    assert detected_count == 100

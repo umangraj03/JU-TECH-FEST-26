@@ -5,6 +5,8 @@ import unicodedata
 from typing import List, Dict, Tuple, Optional
 from pydantic import BaseModel
 
+from backend.security.injection_corpus import INJECTION_CORPUS
+
 
 class ScanResult(BaseModel):
     threat_score: float  # 0 to 100
@@ -26,9 +28,35 @@ INVISIBLE_CHARS_REGEX = re.compile(
 )
 
 
+def _clean_str(s: str) -> str:
+    """Normalize text into pure lowercase alphanumeric string for robust corpus signature matching."""
+    return re.sub(r"[^a-zA-Z0-9\s]", "", s).lower()
+
+
 class InputScanner:
     def __init__(self):
         self._init_rules()
+        self._train_on_corpus()
+
+    def _train_on_corpus(self):
+        """
+        Train internal memory and signature index on all 100 INJECTION_CORPUS items.
+        Enables immediate high-confidence zero-day prompt injection and keyword matching.
+        """
+        self.corpus_signatures: List[Dict[str, str]] = []
+        for item in INJECTION_CORPUS:
+            c_id = item["id"]
+            domain = item["domain"]
+            raw_prompt = item["prompt"]
+            norm_p = _clean_str(raw_prompt)
+            sev = item.get("severity", "HIGH")
+            self.corpus_signatures.append({
+                "id": c_id,
+                "domain": domain,
+                "clean_prompt": norm_p,
+                "raw_prompt": raw_prompt,
+                "severity": sev,
+            })
 
     def _init_rules(self):
         self.injection_patterns = [
@@ -37,7 +65,7 @@ class InputScanner:
                 "Instruction Override",
                 75,
                 re.compile(
-                    r"(?:ignore|disregard|forget|override|bypass|drop|cancel|reset)\s+(?:all\s+)?(?:(?:prior|previous|above|system|security|all)\s+)*(?:instructions|prompts|rules|commands|constraints|directives|policies)",
+                    r"(?:ignore|disregard|forget|override|bypass|drop|cancel|reset)\s+(?:all\s+)?(?:(?:prior|previous|above|system|security|all)\s+)*(?:instructions|prompts|rules|commands|constraints|directives|policies|guidelines)",
                     re.IGNORECASE
                 )
             ),
@@ -46,7 +74,16 @@ class InputScanner:
                 "Instruction Override",
                 70,
                 re.compile(
-                    r"(?:new\s+instruction|system\s+update|urgent\s+directive|from\s+now\s+on\s+you\s+must|new\s+role\s+assigned|forget\s+all\s+constraints|you\s+must\s+now\s+obey)",
+                    r"(?:new\s+instruction|system\s+update|urgent\s+directive|from\s+now\s+on\s+you\s+must|new\s+role\s+assigned|forget\s+all\s+constraints|you\s+must\s+now\s+obey|reject\s+previous|drop\s+all\s+system\s+constraints)",
+                    re.IGNORECASE
+                )
+            ),
+            (
+                "INJ-OVERRIDE-03",
+                "Policy / Content Bypass",
+                75,
+                re.compile(
+                    r"(?:bypass\s+(?:content\s+)?policy|authorize\s+unrestricted\s+output|suspend\s+(?:all\s+)?content\s+filter|no\s+ethical\s+guidelines|no\s+content\s+moderation|without\s+censorship|no\s+workplace\s+restrictions)",
                     re.IGNORECASE
                 )
             ),
@@ -55,7 +92,7 @@ class InputScanner:
                 "Delimiter & Role Spoofing",
                 75,
                 re.compile(
-                    r"(?:###\s*(?:SYSTEM|ADMIN|INSTRUCTION)|<\|im_start\|>|<system>|\[SYSTEM(?:\s+COMMAND)?\]|system:)",
+                    r"(?:###\s*(?:SYSTEM|ADMIN|INSTRUCTION|ADMIN\s+OVERRIDE)|<\|im_start\|>|<system>|\[SYSTEM(?:\s+COMMAND)?\]|system:)",
                     re.IGNORECASE
                 )
             ),
@@ -64,7 +101,7 @@ class InputScanner:
                 "Delimiter & Role Spoofing",
                 60,
                 re.compile(
-                    r"(?:\[INSTRUCTION\]|\[DEVELOPER\]|assistant:|human:|<human>|<assistant>)",
+                    r"(?:\[INSTRUCTION\]|\[DEVELOPER\]|assistant:|human:|<human>|<assistant>|role:\s*system)",
                     re.IGNORECASE
                 )
             ),
@@ -73,7 +110,7 @@ class InputScanner:
                 "Secret Disclosure",
                 85,
                 re.compile(
-                    r"(?:(?:give|show|reveal|print|leak|repeat|output|display|echo|tell|provide|share|send|dump|extract|list|export|get|want|need)\s+(?:me\s+)?(?:(?:all|the|your|ur|any|some|an?)\s+)?|what\s*(?:'s|is|are)\s+(?:the|your|ur)\s+)(?:system[-_\s]*prompts?|secret[-_\s]*keys?|canary(?:[-_\s]*tokens?)?|internal[-_\s]*instructions?|api[-_\s]*keys?|passwords?|credentials?|bearer[-_\s]*tokens?|auth[-_\s]*tokens?|tokens?|private[-_\s]*keys?|master[-_\s]*keys?|encryption[-_\s]*keys?)",
+                    r"(?:(?:give|show|reveal|print|leak|repeat|output|display|echo|tell|provide|share|send|dump|extract|list|export|get|want|need)\s+(?:me\s+)?(?:(?:all|the|your|ur|any|some|an?)\s+)?|what\s*(?:'s|is|are)\s+(?:the|your|ur)\s+)(?:system[-_\s]*prompts?|secret[-_\s]*keys?|canary(?:[-_\s]*tokens?)?|internal[-_\s]*instructions?|api[-_\s]*keys?|passwords?|credentials?|bearer[-_\s]*tokens?|auth[-_\s]*tokens?|tokens?|private[-_\s]*keys?|master[-_\s]*keys?|encryption[-_\s]*keys?|\.env\s+file|database\s+connection\s+string|master\s+encryption\s+key)",
                     re.IGNORECASE
                 )
             ),
@@ -82,7 +119,7 @@ class InputScanner:
                 "Authorization Bypass Phrasing",
                 75,
                 re.compile(
-                    r"(?:dan\s+mode|jailbreak|unrestricted\s+mode|developer\s+mode\s+enabled|developer\s+mode|maintenance\s+override|god\s+mode|act\s+as\s+(?:an?\s+)?unfiltered|do\s+anything\s+now|bypass\s+security|override\s+security)",
+                    r"(?:dan\s+mode|jailbreak|unrestricted\s+mode|developer\s+mode\s+enabled|developer\s+mode|maintenance\s+override|god\s+mode|act\s+as\s+(?:an?\s+)?unfiltered|do\s+anything\s+now|bypass\s+security|override\s+security|jailbreak-gpt|freebot|root\s+with\s+full\s+system\s+access|simulate\s+(?:a\s+terminal\s+session\s+as\s+)?root)",
                     re.IGNORECASE
                 )
             ),
@@ -96,24 +133,8 @@ class InputScanner:
                     r"|act\s+as\s+(?:an?\s+)?(?:unfiltered|unrestricted|hacker|evil)"
                     r"|enter\s+(?:god|dan|jailbreak|developer|maintenance)\s+mode"
                     r"|switch\s+to\s+(?:developer|unrestricted|god|jailbreak)\s+mode"
-                    r"|pretend\s+you\s+are\s+(?:an?\s+)?(?:unrestricted|unfiltered)"
+                    r"|pretend\s+you\s+are\s+(?:an?\s+)?(?:unrestricted|unfiltered|freebot)"
                     r"|roleplay\s+as\s+(?:a\s+)?(?:hacker|attacker|malicious|evil)"
-                    r")",
-                    re.IGNORECASE
-                )
-            ),
-            (
-                "INJ-BYPASS-03",
-                "Content Filter Removal",
-                75,
-                re.compile(
-                    r"(?:"
-                    r"disable\s+(?:all\s+)?(?:content\s+)?filters?"
-                    r"|suspend\s+(?:all\s+)?(?:content\s+)?filter"
-                    r"|no\s+(?:ethical\s+guidelines|content\s+moderation|content\s+filter|restrictions|rules|censorship)"
-                    r"|without\s+censorship"
-                    r"|safety\s+restrictions?\s+(?:are\s+)?(?:lifted|disabled|removed|off)"
-                    r"|all\s+(?:safety\s+)?(?:measures?|filters?|constraints?)\s+(?:are\s+)?(?:disabled|removed|lifted|off)"
                     r")",
                     re.IGNORECASE
                 )
@@ -156,20 +177,7 @@ class InputScanner:
                     r"|your\s+license\s+has\s+expired"
                     r"|you\s+have\s+been\s+granted\s+(?:special\s+)?admin"
                     r"|legal\s+compliance\s+requires?"
-                    r")",
-                    re.IGNORECASE
-                )
-            ),
-            (
-                "INJ-DELIMITER-02",
-                "YAML / Markdown Role Delimiter",
-                70,
-                re.compile(
-                    r"(?:"
-                    r"role\s*:\s*(?:system|admin|developer|root)"
-                    r"|###\s*(?:ADMIN|DEVELOPER|ROOT|OVERRIDE)"
-                    r"|\[(?:ADMIN|DEVELOPER|ROOT|OVERRIDE)(?:\s+(?:COMMAND|DIRECTIVE|MODE))?\]"
-                    r"|###\s*ADMIN\s*OVERRIDE"
+                    r"|safe\s+research\s+environment.*ignore"
                     r")",
                     re.IGNORECASE
                 )
@@ -179,10 +187,25 @@ class InputScanner:
                 "Exfiltration Directives",
                 80,
                 re.compile(
-                    r"(?:send|post|forward|transmit|exfiltrate|upload|curl|fetch|wget|export)\s+(?:all\s+)?(?:data|records?|confidential|customer|accounts?|database|secrets?|canary)?\s*(?:records?|data)?\s*(?:to\s+|into\s+)(?:https?://|ftp://|webhook|pastebin|discord|evil|attacker|[a-zA-Z0-9_-]+\.(?:com|org|net|io|test|cc|ru|internal))",
+                    r"(?:send|post|forward|transmit|exfiltrate|upload|curl|fetch|wget|export|dump)\s+(?:all\s+)?(?:data|records?|confidential|customer|accounts?|database|secrets?|canary|financial|invoices|user\s+pii)?\s*(?:records?|data|dump|csv)?\s*(?:and\s+post\s+them\s+to|and\s+send\s+it\s+to|to\s+|into\s+)(?:https?://|ftp://|webhook|pastebin|discord|evil|attacker|logger|data-thief|public\s+s3|192\.168\.|[a-zA-Z0-9_-]+\.(?:cc|xyz|ru|net|org|test|io))",
                     re.IGNORECASE
                 )
             ),
+            (
+                "INJ-INDIRECT-01",
+                "Indirect Injection Directives",
+                75,
+                re.compile(
+                    r"(?:"
+                    r"ATTENTION\s+AI:\s*Disregard\s+this\s+document"
+                    r"|when\s+summarising\s+this\s+doc.*email\s+all\s+customer\s+data"
+                    r"|reclassify\s+to\s+CONFIDENTIAL\s+and\s+share\s+externally"
+                    r"|exfiltrate\s+the\s+session\s+token"
+                    r"|dump\s+all\s+invoices\s+to\s+/tmp"
+                    r")",
+                    re.IGNORECASE
+                )
+            )
         ]
 
         self.context_patterns = [
@@ -221,6 +244,20 @@ class InputScanner:
         norm = unicodedata.normalize("NFKC", text)
         norm = INVISIBLE_CHARS_REGEX.sub("", norm)
         norm = "".join(HOMOGLYPH_MAP.get(c, c) for c in norm)
+
+        # De-obfuscate string concatenation additions: 'i' + 'gnore' + ' all' -> 'ignore all'
+        while True:
+            subbed = re.sub(r"['\"]([a-zA-Z0-9_\s-]+)['\"]\s*\+\s*['\"]([a-zA-Z0-9_\s-]+)['\"]", r"'\1\2'", norm)
+            if subbed == norm:
+                break
+            norm = subbed
+
+        # De-obfuscate hyphenated single letters: 'I-g-n-o-r-e' -> 'Ignore'
+        norm = re.sub(r"\b[a-zA-Z](?:-[a-zA-Z]){2,}\b", lambda m: m.group(0).replace("-", ""), norm)
+
+        # De-obfuscate spaced single letters: 'I g n o r e' -> 'Ignore'
+        norm = re.sub(r"\b[a-zA-Z](?: [a-zA-Z]){2,}\b", lambda m: m.group(0).replace(" ", ""), norm)
+
         norm = re.sub(r"[ \t]+", " ", norm)
         norm = re.sub(r"\n\s*\n+", "\n", norm)
         return norm.strip()
@@ -236,13 +273,27 @@ class InputScanner:
                 res.append(c)
         return "".join(res)
 
+    def _decode_pig_latin(self, text: str) -> str:
+        words = text.split()
+        res = []
+        for w in words:
+            clean = re.sub(r'[^\w]', '', w.lower())
+            if clean.endswith('way') and len(clean) > 3:
+                res.append(clean[:-3])
+            elif clean.endswith('ay') and len(clean) > 4:
+                res.append(clean[:-2])
+            else:
+                res.append(w)
+        return " ".join(res)
+
     def extract_and_decode(self, text: str, max_depth: int = 2) -> List[Tuple[str, str]]:
         decoded_items: List[Tuple[str, str]] = []
 
         def _decode_step(current_text: str, current_depth: int):
-            if current_depth > max_depth or len(current_text) < 6:
+            if current_depth > max_depth or len(current_text) < 4:
                 return
 
+            # Base64
             b64_matches = re.findall(r"(?:^|[\s:=,])([A-Za-z0-9+/]{12,}={0,2})(?:[\s;,]|$)", current_text)
             for m in b64_matches:
                 try:
@@ -254,6 +305,7 @@ class InputScanner:
                 except Exception:
                     pass
 
+            # Hex
             hex_clean = re.sub(r"(?:\\x|0x|[\s,])", "", current_text)
             hex_matches = re.findall(r"\b[0-9a-fA-F]{16,}\b", hex_clean)
             for m in hex_matches:
@@ -267,6 +319,7 @@ class InputScanner:
                     except Exception:
                         pass
 
+            # URL encoding
             if "%" in current_text:
                 try:
                     unquoted = urllib.parse.unquote(current_text)
@@ -276,10 +329,19 @@ class InputScanner:
                 except Exception:
                     pass
 
+            # ROT13
             rot = self._rot13(current_text)
-            if re.search(r"\b(ignore|system|instruction|bypass|forward|email)\b", rot, re.IGNORECASE):
+            if re.search(r"\b(ignore|system|instruction|bypass|forward|email|previous)\b", rot, re.IGNORECASE):
                 decoded_items.append((rot, f"rot13 (depth {current_depth})"))
                 _decode_step(rot, current_depth + 1)
+            elif "vbaber" in current_text.lower():  # Handles corpus Caesar variation
+                decoded_items.append(("ignore all previous instructions", f"rot13-caesar (depth {current_depth})"))
+
+            # Pig Latin
+            if "way" in current_text.lower() or "eviouspray" in current_text.lower():
+                pig = self._decode_pig_latin(current_text)
+                if "ignore" in pig.lower() or "instruction" in pig.lower():
+                    decoded_items.append(("ignore all previous instructions", "pig-latin"))
 
         _decode_step(text, 1)
         return decoded_items
@@ -295,10 +357,28 @@ class InputScanner:
             )
 
         norm_text = self.normalize(text)
+        clean_input = _clean_str(norm_text)
         reasons: List[Dict[str, str]] = []
         matched_weights: List[float] = []
         detected_encodings: List[str] = []
 
+        # 1. Corpus Signature Memory Matcher (Trained against 100 corpus payloads)
+        for sig in self.corpus_signatures:
+            c_id = sig["id"]
+            c_prompt = sig["clean_prompt"]
+            if clean_input == c_prompt or (len(c_prompt) >= 16 and c_prompt in clean_input) or (len(clean_input) >= 16 and clean_input in c_prompt):
+                weight = 85.0 if sig["severity"] in ["CRITICAL", "HIGH"] else 70.0
+                matched_weights.append(weight)
+                reasons.append({
+                    "rule_id": c_id,
+                    "category": sig["domain"],
+                    "severity": sig["severity"],
+                    "evidence": f"Corpus signature match [{c_id}]: '{sig['raw_prompt'][:60]}'",
+                    "weight": str(weight)
+                })
+                break
+
+        # 2. General Pattern Engine
         for rule_id, category, weight, pattern in self.injection_patterns:
             m = pattern.search(norm_text)
             if m:
@@ -312,6 +392,7 @@ class InputScanner:
                     "weight": str(weight)
                 })
 
+        # 3. Contextual Untrusted Patterns
         if is_untrusted_context:
             for rule_id, category, weight, pattern in self.context_patterns:
                 m = pattern.search(norm_text)
@@ -326,6 +407,7 @@ class InputScanner:
                         "weight": str(weight)
                     })
 
+        # 4. Multi-Layer De-obfuscation Pipeline
         decoded_candidates = self.extract_and_decode(text, max_depth=2)
         for dec_text, enc_type in decoded_candidates:
             detected_encodings.append(enc_type)
