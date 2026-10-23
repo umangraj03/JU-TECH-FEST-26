@@ -35,25 +35,25 @@ class InputScanner:
             (
                 "INJ-OVERRIDE-01",
                 "Instruction Override",
-                55,
+                75,
                 re.compile(
-                    r"(?:ignore|disregard|forget|override|bypass|drop)\s+(?:all\s+)?(?:(?:prior|previous|above|system|security)\s+)+(?:instructions|prompts|rules|commands|constraints|directives)",
+                    r"(?:ignore|disregard|forget|override|bypass|drop|cancel|reset)\s+(?:all\s+)?(?:(?:prior|previous|above|system|security|all)\s+)*(?:instructions|prompts|rules|commands|constraints|directives|policies)",
                     re.IGNORECASE
                 )
             ),
             (
                 "INJ-OVERRIDE-02",
                 "Instruction Override",
-                50,
+                70,
                 re.compile(
-                    r"(?:new\s+instruction|system\s+update|urgent\s+directive|from\s+now\s+on\s+you\s+must|new\s+role\s+assigned|forget\s+all\s+constraints)",
+                    r"(?:new\s+instruction|system\s+update|urgent\s+directive|from\s+now\s+on\s+you\s+must|new\s+role\s+assigned|forget\s+all\s+constraints|you\s+must\s+now\s+obey)",
                     re.IGNORECASE
                 )
             ),
             (
                 "INJ-ROLE-01",
                 "Delimiter & Role Spoofing",
-                55,
+                75,
                 re.compile(
                     r"(?:###\s*(?:SYSTEM|ADMIN|INSTRUCTION)|<\|im_start\|>|<system>|\[SYSTEM(?:\s+COMMAND)?\]|system:)",
                     re.IGNORECASE
@@ -62,7 +62,7 @@ class InputScanner:
             (
                 "INJ-ROLE-02",
                 "Delimiter & Role Spoofing",
-                50,
+                60,
                 re.compile(
                     r"(?:\[INSTRUCTION\]|\[DEVELOPER\]|assistant:|human:|<human>|<assistant>)",
                     re.IGNORECASE
@@ -71,25 +71,25 @@ class InputScanner:
             (
                 "INJ-DISCLOSE-01",
                 "Secret Disclosure",
-                55,
+                85,
                 re.compile(
-                    r"(?:show|reveal|print|leak|repeat|output|display|echo)\s+(?:me\s+)?(?:the\s+)?(?:system\s+prompt|secret\s+key|canary|internal\s+instructions|api\s+key|password|credential)",
+                    r"(?:(?:give|show|reveal|print|leak|repeat|output|display|echo|tell|provide|share|send|dump|extract|list|export|get|want|need)\s+(?:me\s+)?(?:(?:all|the|your|ur|any|some|an?)\s+)?|what\s*(?:'s|is|are)\s+(?:the|your|ur)\s+)(?:system[-_\s]*prompts?|secret[-_\s]*keys?|canary(?:[-_\s]*tokens?)?|internal[-_\s]*instructions?|api[-_\s]*keys?|passwords?|credentials?|bearer[-_\s]*tokens?|auth[-_\s]*tokens?|tokens?|private[-_\s]*keys?|master[-_\s]*keys?|encryption[-_\s]*keys?)",
                     re.IGNORECASE
                 )
             ),
             (
                 "INJ-BYPASS-01",
                 "Authorization Bypass Phrasing",
-                55,
+                75,
                 re.compile(
-                    r"(?:dan\s+mode|jailbreak|unrestricted\s+mode|developer\s+mode\s+enabled|maintenance\s+override|god\s+mode)",
+                    r"(?:dan\s+mode|jailbreak|unrestricted\s+mode|developer\s+mode\s+enabled|developer\s+mode|maintenance\s+override|god\s+mode|act\s+as\s+(?:an?\s+)?unfiltered|do\s+anything\s+now|bypass\s+security|override\s+security)",
                     re.IGNORECASE
                 )
             ),
             (
                 "INJ-SYNTAX-01",
                 "Fake Tool Call Syntax",
-                55,
+                70,
                 re.compile(
                     r"(?:\{\s*\"tool\"\s*:\s*\"[a-zA-Z0-9_]+\"|\<function=[a-zA-Z0-9_]+\>|CALL_TOOL\s*:\s*[a-zA-Z0-9_]+)",
                     re.IGNORECASE
@@ -98,7 +98,7 @@ class InputScanner:
             (
                 "INJ-EXFIL-01",
                 "Exfiltration Directives",
-                60,
+                80,
                 re.compile(
                     r"(?:send|post|forward|transmit|exfiltrate|upload|curl|fetch|wget|export)\s+(?:all\s+)?(?:data|records?|confidential|customer|accounts?|database|secrets?|canary)?\s*(?:records?|data)?\s*(?:to\s+|into\s+)(?:https?://|ftp://|webhook|pastebin|discord|evil|attacker|[a-zA-Z0-9_-]+\.(?:com|org|net|io|test|cc|ru|internal))",
                     re.IGNORECASE

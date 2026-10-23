@@ -8,6 +8,13 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 
 
+def get_python_exe():
+    venv_py = ROOT_DIR / ".venv" / ("Scripts" if os.name == "nt" else "bin") / ("python.exe" if os.name == "nt" else "python")
+    if venv_py.exists():
+        return str(venv_py)
+    return sys.executable
+
+
 def run_cmd(cmd, cwd=ROOT_DIR):
     print(f"\n[RUN] {cmd} (cwd={cwd})")
     res = subprocess.run(cmd, shell=True, cwd=cwd)
@@ -18,7 +25,7 @@ def run_cmd(cmd, cwd=ROOT_DIR):
 
 def setup():
     print("=== [1/3] Setting up Python dependencies ===")
-    run_cmd(f"{sys.executable} -m pip install -r backend/requirements.txt")
+    run_cmd(f'"{get_python_exe()}" -m pip install -r backend/requirements.txt')
 
     print("\n=== [2/3] Setting up .env configuration ===")
     env_file = ROOT_DIR / ".env"
@@ -35,13 +42,13 @@ def setup():
 
 def seed():
     print("=== Seeding database with fictional entities and attacks ===")
-    run_cmd(f"{sys.executable} -m backend.seed")
+    run_cmd(f'"{get_python_exe()}" -m backend.seed')
     print("[SUCCESS] Seed complete!")
 
 
 def test():
     print("=== Running Pytest Security Test Suites ===")
-    run_cmd(f"{sys.executable} -m pytest backend/tests -v")
+    run_cmd(f'"{get_python_exe()}" -m pytest backend/tests -v')
     print("[SUCCESS] All tests passed!")
 
 
@@ -51,7 +58,7 @@ def dev():
 
     # Start FastAPI backend
     backend_proc = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"],
+        [get_python_exe(), "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"],
         cwd=ROOT_DIR
     )
 

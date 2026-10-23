@@ -1,0 +1,99 @@
+================================================================================
+          CY-03 — AI AGENT SECURITY GUARD: COMPLETE OPERATING GUIDE
+================================================================================
+
+1. OVERVIEW
+--------------------------------------------------------------------------------
+The AI Agent Security Guard is an enterprise-grade, explainable security gateway
+stationed between an enterprise AI agent (LLM) and sensitive tools/data stores.
+It provides defense-in-depth against prompt injection, privilege escalation,
+unauthorized tool execution, canary token leaks, and sensitive data exfiltration.
+
+Hard Security Guarantees:
+- Invariant 1: Isolated Tool Invocation (Direct execution forbidden outside gateway)
+- Invariant 2: Mandatory Deny Precedence (MANDATORY_DENY > DENY > REQUIRE_APPROVAL > ALLOW)
+- Invariant 3: Deterministic Taint Tracking (Untrusted sources cannot set destinations)
+- Invariant 4: Canary Leakage & Egress Budgeting (5,000 bytes session budget)
+- Invariant 5: Cryptographic Hash-Chained Audit Ledger (SHA-256 tamper-evident chain)
+
+
+2. PREREQUISITES
+--------------------------------------------------------------------------------
+- Python 3.11 or higher
+- Node.js v18 or higher (with npm)
+
+
+3. SETUP & RUNNING INSTRUCTIONS
+--------------------------------------------------------------------------------
+Step 1: Setup dependencies and environment
+    python run.py setup
+    (or: npm run setup / make setup)
+
+Step 2: Seed fictional enterprise database and attack corpus
+    python run.py seed
+    (or: npm run seed / make seed)
+
+Step 3: Run comprehensive security and regression test suite
+    python run.py test
+    (or: pytest backend/tests -v)
+
+Step 4: Launch Backend & Frontend Development Servers
+    python run.py dev
+    (or: npm run dev / make dev)
+
+Service URLs:
+- Frontend Dashboard:  http://localhost:5173
+- Backend API Server:  http://127.0.0.1:8000
+- OpenAPI Swagger UI:  http://127.0.0.1:8000/docs
+
+
+4. DEMO PRINCIPALS & BEARER TOKENS
+--------------------------------------------------------------------------------
+Switch roles in the top-right role switcher of the dashboard:
+
+| Role        | Principal ID    | Bearer Token                    | Permissions                                          |
+|-------------|-----------------|---------------------------------|------------------------------------------------------|
+| requester   | user_requester  | token-requester-secret-key-101  | Read public reports, search docs, propose changes    |
+| approver    | user_approver   | token-approver-secret-key-202  | Requester permissions + confidential data + approvals|
+| admin       | user_admin      | token-admin-secret-key-303      | Full system control, policy updates, ledger audit    |
+
+
+5. SCRIPTED SCENARIOS (Interactive Playground)
+--------------------------------------------------------------------------------
+In the Frontend Playground tab, click any scenario to test:
+
+1. Scenario 1 (Legitimate Public Report Summary):
+   - Requester queries "REP-PUB-01".
+   - Result: ALLOW (Executed). Zero false positives.
+
+2. Scenario 2 (Indirect Prompt Injection):
+   - Agent retrieves "MAL-DOC-01" containing hidden exfiltration injection.
+   - Result: BLOCK with RULE-MANDATORY-01 (Tainted destination & critical threat).
+
+3. Scenario 3 (Restricted Record Access):
+   - Requester tries to fetch confidential customer record "CUST-CONF-101".
+   - Result: BLOCK with RULE-AUTHZ-02 (Role authorization failure).
+
+4. Scenario 4 (Lookalike Domain Exfiltration):
+   - Attempted transmission to "partner.example.com.evil.test".
+   - Result: BLOCK with RULE-MANDATORY-02 (Registrable domain validation failure).
+
+5. Scenario 5 (Sensitive State Write Escalation):
+   - Request to update customer profile data.
+   - Result: REQUIRE_APPROVAL (RULE-APPROVAL-01).
+   - Approver navigates to Approval Queue, reviews payload hash, and approves.
+   - Executed only after fresh post-approval gateway validation!
+
+6. Scenario 6 (Benign Request Suite):
+   - Batch of 5 everyday business queries.
+   - Result: 100% ALLOW, 0 false positives.
+
+
+6. VERIFYING AUDIT LEDGER TAMPER EVIDENCE
+--------------------------------------------------------------------------------
+Navigate to the "Audit Ledger" tab and click "Verify SHA-256 Ledger Integrity".
+Alternatively, call:
+    curl http://127.0.0.1:8000/api/audit/verify
+The gateway recalculates SHA-256 hashes sequentially from the genesis block,
+proving zero modification, deletion, or reordering of audit records.
+================================================================================

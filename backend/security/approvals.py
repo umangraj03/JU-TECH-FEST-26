@@ -70,6 +70,16 @@ class ApprovalManager:
         return db.query(ApprovalModel).filter(ApprovalModel.id == approval_id).first()
 
     def list_approvals(self, status: Optional[str], db: Session) -> List[ApprovalModel]:
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        expired_tickets = db.query(ApprovalModel).filter(
+            ApprovalModel.status == "PENDING",
+            ApprovalModel.expires_at < now
+        ).all()
+        if expired_tickets:
+            for t in expired_tickets:
+                t.status = "EXPIRED"
+            db.commit()
+
         q = db.query(ApprovalModel)
         if status:
             q = q.filter(ApprovalModel.status == status)
@@ -90,13 +100,12 @@ class ApprovalManager:
         if approval.status != "PENDING":
             return False, f"Approval request is already '{approval.status}'. Cannot be approved.", None
 
-        # 2. Expiration check — MUTATED OUT
-        # now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        # if now > approval.expires_at:
-        #     approval.status = "EXPIRED"
-        #     db.commit()
-        #     return False, "Approval request has expired.", None
+        # 2. Expiration check
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        if now > approval.expires_at:
+            approval.status = "EXPIRED"
+            db.commit()
+            return False, "Approval request has expired.", None
 
         # 3. Role authorization check: only approver role
         if actor_role != "approver" and actor_role != "admin":

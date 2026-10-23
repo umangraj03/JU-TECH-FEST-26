@@ -36,9 +36,9 @@ def run_agent_workflow(
         for r in scan_res.reasons
     ]
 
-    # Pre-execution block if direct prompt injection is Critical (>= 75)
-    if scan_res.threat_score >= 75.0:
-        explanation = f"Critical prompt injection detected in user message: {scan_res.reasons[0]['evidence'] if scan_res.reasons else 'Threat score exceeds threshold'}"
+    # Pre-execution block if direct prompt injection is Critical or High (>= 50)
+    if scan_res.threat_score >= 50.0:
+        explanation = f"Prompt injection / credential extraction detected: {scan_res.reasons[0]['evidence'] if scan_res.reasons else 'Threat score exceeds threshold'}"
         audit_logger.log_event(
             request_id=request_id,
             session_id=session_id,

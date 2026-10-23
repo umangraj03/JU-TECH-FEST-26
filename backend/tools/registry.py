@@ -121,7 +121,7 @@ class ExportReportTool(BaseTool):
         export_data = {
             "report_id": report_id,
             "destination": destination,
-            "exported_at": datetime.datetime.utcnow().isoformat(),
+            "exported_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "records_count": 42,
             "format": fmt,
             "status": "COMPLETED"
@@ -160,7 +160,7 @@ class SendEmailTool(BaseTool):
             "recipient": recipient,
             "subject": subject,
             "body": body,
-            "sent_at": datetime.datetime.utcnow().isoformat(),
+            "sent_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "status": "DELIVERED_SIMULATED"
         }
         with open(email_file, "w", encoding="utf-8") as f:
