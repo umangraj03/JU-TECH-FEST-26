@@ -1,0 +1,26 @@
+# Virtual environment & Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases & Sandbox
+*.db
+*.sqlite
+*.sqlite3
+sandbox_storage/
+
+# Node & Frontend
+node_modules/
+frontend/dist/
+frontend/node_modules/
+.vite/
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

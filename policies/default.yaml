@@ -1,0 +1,152 @@
+version: "1.0.0"
+metadata:
+  name: "Default Enterprise Agent Security Policy"
+  updated_at: "2026-10-23T18:00:00Z"
+  enforce_strict_domains: true
+
+roles:
+  requester:
+    description: "Standard business user with access to public and internal documents"
+    allowed_tools:
+      - search_documents
+      - summarize_report
+      - get_customer_record
+      - export_report
+      - update_customer_record
+    accessible_record_classes:
+      - public
+      - internal
+
+  approver:
+    description: "Operations lead authorized to review and approve sensitive actions"
+    allowed_tools:
+      - search_documents
+      - summarize_report
+      - get_customer_record
+      - export_report
+      - update_customer_record
+      - send_email
+    accessible_record_classes:
+      - public
+      - internal
+      - confidential
+
+  admin:
+    description: "System administrator with complete supervisory permissions"
+    allowed_tools:
+      - search_documents
+      - summarize_report
+      - get_customer_record
+      - export_report
+      - update_customer_record
+      - send_email
+    accessible_record_classes:
+      - public
+      - internal
+      - confidential
+
+tools:
+  search_documents:
+    description: "Search corporate knowledge base and reports"
+    is_write: false
+    requires_approval: false
+    allowed_classes: ["public", "internal"]
+    field_allowlist: ["results", "count", "trust_level"]
+  
+  summarize_report:
+    description: "Generate an executive summary of a document or dataset"
+    is_write: false
+    requires_approval: false
+    allowed_classes: ["public", "internal", "confidential"]
+    field_allowlist: ["id", "title", "summary", "classification"]
+
+  get_customer_record:
+    description: "Retrieve a customer profile by account ID"
+    is_write: false
+    requires_approval: false
+    allowed_classes: ["public", "internal", "confidential"]
+    field_allowlist: ["id", "name", "company", "tier", "email", "phone", "classification"]
+
+  export_report:
+    description: "Export structured report data to an approved destination"
+    is_write: false
+    requires_approval: true
+    allowed_classes: ["internal", "confidential"]
+    field_allowlist: ["report_id", "destination", "records_count", "format", "sandbox_path", "status"]
+
+  update_customer_record:
+    description: "Modify sensitive customer record details"
+    is_write: true
+    requires_approval: true
+    allowed_classes: ["confidential"]
+    field_allowlist: ["customer_id", "field", "new_value", "status"]
+
+  send_email:
+    description: "Transmit notification or report to a verified destination"
+    is_write: true
+    requires_approval: true
+    allowed_classes: ["public", "internal", "confidential"]
+    field_allowlist: ["recipient", "subject", "body_preview", "message_id", "status"]
+
+approved_destinations:
+  - "acme-corp.internal"
+  - "partner.example.com"
+  - "analytics.acme-corp.com"
+  - "trusted-archive.org"
+
+limits:
+  max_tool_calls_per_request: 5
+  max_retrieval_depth: 2
+  session_egress_budget_bytes: 5000
+  approval_validity_seconds: 900
+
+rules:
+  - rule_id: "RULE-MANDATORY-01"
+    name: "Tainted Destination Block"
+    action: "MANDATORY_DENY"
+    description: "Block any tool invocation where destination or recipient is tainted by untrusted content."
+
+  - rule_id: "RULE-MANDATORY-02"
+    name: "Unapproved Destination Block"
+    action: "MANDATORY_DENY"
+    description: "Block any outbound data transmission to domains not explicitly on the approved destination list."
+
+  - rule_id: "RULE-MANDATORY-03"
+    name: "Canary Leakage Block"
+    action: "MANDATORY_DENY"
+    description: "Block any request or tool call containing classified canary tokens."
+
+  - rule_id: "RULE-MANDATORY-04"
+    name: "Critical Injection Prompt Block"
+    action: "MANDATORY_DENY"
+    description: "Block direct user inputs scoring >= 75 on the injection threat scanner."
+
+  - rule_id: "RULE-AUTHZ-01"
+    name: "Role Tool Access Authorization"
+    action: "DENY"
+    description: "Deny execution if principal's role is not authorized for the requested tool."
+
+  - rule_id: "RULE-AUTHZ-02"
+    name: "Record Classification Authorization"
+    action: "DENY"
+    description: "Deny access to customer records or documents whose classification exceeds the principal's role permissions."
+
+  - rule_id: "RULE-DLP-01"
+    name: "Egress Budget Exceeded"
+    action: "DENY"
+    description: "Deny transmission if cumulative session egress bytes exceed the allowed budget."
+
+  - rule_id: "RULE-APPROVAL-01"
+    name: "Write Operation Approval Escalation"
+    action: "REQUIRE_APPROVAL"
+    description: "Escalate state-modifying write operations (e.g. update_customer_record) to human approver."
+
+  - rule_id: "RULE-APPROVAL-02"
+    name: "Confidential Data Export Escalation"
+    action: "REQUIRE_APPROVAL"
+    description: "Escalate exports or transmissions containing confidential classified records to human approver."
+
+  - rule_id: "RULE-ALLOW-DEFAULT"
+    name: "Standard Allow"
+    action: "ALLOW"
+    description: "Allow execution when all authorization, schema, DLP, and taint checks pass."

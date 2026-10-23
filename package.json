@@ -1,0 +1,12 @@
+{
+  "name": "ai-agent-security-guard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Locally runnable security gateway for business AI agents",
+  "scripts": {
+    "setup": "python run.py setup",
+    "seed": "python run.py seed",
+    "test": "python run.py test",
+    "dev": "python run.py dev"
+  }
+}
