@@ -72,7 +72,7 @@ def test_expired_approval_rejected(test_db):
     )
 
     # Artificially expire the ticket
-    appr.expires_at = datetime.datetime.utcnow() - datetime.timedelta(seconds=10)
+    appr.expires_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(seconds=10)
     test_db.commit()
 
     ok, msg, _ = approval_manager.validate_and_approve(

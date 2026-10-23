@@ -10,7 +10,7 @@ class AuditLogModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     entry_id = Column(String(64), unique=True, index=True, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), nullable=False)
     request_id = Column(String(64), index=True, nullable=False)
     session_id = Column(String(64), index=True, nullable=False)
     principal_id = Column(String(64), nullable=False)
@@ -43,7 +43,7 @@ class ApprovalModel(Base):
     risk_reason = Column(Text, nullable=False)
     policy_rule_id = Column(String(64), nullable=False)
     status = Column(String(32), default="PENDING", nullable=False)  # PENDING, APPROVED, REJECTED, EXPIRED
-    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     resolved_at = Column(DateTime, nullable=True)
     resolved_by = Column(String(64), nullable=True)
@@ -55,8 +55,8 @@ class SessionBudgetModel(Base):
     session_id = Column(String(64), primary_key=True)
     total_egress_bytes = Column(Integer, default=0, nullable=False)
     tool_call_count = Column(Integer, default=0, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), nullable=False)
 
 
 class DocumentModel(Base):

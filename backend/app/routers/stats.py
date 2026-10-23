@@ -1,9 +1,11 @@
 import json
+import asyncio
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from backend.app.database import get_db
+from backend.app.database import get_db, SessionLocal
 from backend.models.db_models import AuditLogModel, ApprovalModel
 from backend.models.schema import OverviewStats, ThreatStats, ThreatItem, AuditLogItem
 from backend.security.audit import audit_logger
@@ -102,6 +104,71 @@ def get_live_events(
             "current_hash": r.current_hash
         })
     return {"events": items, "count": len(items)}
+
+
+@router.get("/events/stream")
+async def stream_live_events(request: Request):
+    """
+    Server-Sent Events (SSE) streaming endpoint for live security events (P2).
+    Streams audit ledger events in real-time.
+    """
+    async def event_generator():
+        last_id = 0
+        with SessionLocal() as db:
+            last_record = db.query(AuditLogModel).order_by(AuditLogModel.id.desc()).first()
+            if last_record:
+                last_id = last_record.id
+
+        # Initial handshake ping
+        yield f": connected to security gateway sse stream\n\n"
+
+        while True:
+            if await request.is_disconnected():
+                break
+
+            with SessionLocal() as db:
+                new_records = (
+                    db.query(AuditLogModel)
+                    .filter(AuditLogModel.id > last_id)
+                    .order_by(AuditLogModel.id.asc())
+                    .all()
+                )
+                for r in new_records:
+                    last_id = r.id
+                    try:
+                        payload = json.loads(r.redacted_payload)
+                    except Exception:
+                        payload = {}
+                    data = {
+                        "id": r.id,
+                        "entry_id": r.entry_id,
+                        "timestamp": r.timestamp.isoformat(),
+                        "request_id": r.request_id,
+                        "principal_id": r.principal_id,
+                        "principal_role": r.principal_role,
+                        "category": r.category,
+                        "threat": r.threat_classification,
+                        "risk_score": r.risk_score,
+                        "tool_name": r.tool_name,
+                        "policy_rule_id": r.policy_rule_id,
+                        "decision": r.decision,
+                        "explanation": r.explanation,
+                        "payload": payload,
+                        "current_hash": r.current_hash
+                    }
+                    yield f"event: audit_event\ndata: {json.dumps(data)}\n\n"
+
+            await asyncio.sleep(1.0)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 @router.get("/threats", response_model=ThreatStats)

@@ -41,7 +41,7 @@ class ApprovalManager:
         canonical = canonicalize_payload(tool_name, arguments)
         payload_hash = compute_payload_hash(canonical)
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         expires = now + datetime.timedelta(seconds=settings.APPROVAL_TIMEOUT_SECONDS)
 
         approval = ApprovalModel(
@@ -90,12 +90,13 @@ class ApprovalManager:
         if approval.status != "PENDING":
             return False, f"Approval request is already '{approval.status}'. Cannot be approved.", None
 
-        # 2. Expiration check
-        now = datetime.datetime.utcnow()
-        if now > approval.expires_at:
-            approval.status = "EXPIRED"
-            db.commit()
-            return False, "Approval request has expired.", None
+        # 2. Expiration check — MUTATED OUT
+        # now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        # if now > approval.expires_at:
+        #     approval.status = "EXPIRED"
+        #     db.commit()
+        #     return False, "Approval request has expired.", None
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
         # 3. Role authorization check: only approver role
         if actor_role != "approver" and actor_role != "admin":
@@ -127,7 +128,7 @@ class ApprovalManager:
         if approval.status != "PENDING":
             return False, f"Approval request is already '{approval.status}'.", None
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         approval.status = "REJECTED"
         approval.resolved_at = now
         approval.resolved_by = actor_id

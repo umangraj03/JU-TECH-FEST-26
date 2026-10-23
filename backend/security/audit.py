@@ -87,7 +87,7 @@ class AuditLogger:
         prev_hash = last_entry.current_hash if last_entry else GENESIS_HASH
 
         entry_id = f"aud_{uuid.uuid4().hex}"
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         timestamp_iso = now.isoformat()
 
         # 3. Calculate current hash
