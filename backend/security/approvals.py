@@ -2,7 +2,7 @@ import json
 import hashlib
 import secrets
 import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, cast
 from sqlalchemy.orm import Session
 from backend.models.db_models import ApprovalModel
 from backend.app.config import settings
@@ -100,6 +100,10 @@ class ApprovalManager:
         if approval.status != "PENDING":
             return False, f"Approval request is already '{approval.status}'. Cannot be approved.", None
 
+        # Reset narrowed type: Pyright narrows approval.status to Literal["PENDING"] above;
+        # cast restores it to ApprovalModel so subsequent status mutations are valid.
+        approval = cast(ApprovalModel, approval)
+
         # 2. Expiration check
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         if now > approval.expires_at:
@@ -136,6 +140,9 @@ class ApprovalManager:
 
         if approval.status != "PENDING":
             return False, f"Approval request is already '{approval.status}'.", None
+
+        # Reset narrowed type (same pattern as validate_and_approve).
+        approval = cast(ApprovalModel, approval)
 
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         approval.status = "REJECTED"

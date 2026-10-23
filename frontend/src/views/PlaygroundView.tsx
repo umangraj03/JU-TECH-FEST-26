@@ -34,6 +34,11 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onNavigate }) =>
   // Run Custom Prompt Mutation
   const runPromptMutation = useMutation({
     mutationFn: (msg: string) => api.runAgent(msg),
+    onMutate: () => {
+      // Clear stale results immediately before new request fires
+      setLastResponse(null);
+      setActiveScenarioId(null);
+    },
     onSuccess: (data) => {
       setLastResponse(data);
       setActiveScenarioId(null);
@@ -43,6 +48,10 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onNavigate }) =>
   // Run Scenario Mutation
   const runScenarioMutation = useMutation({
     mutationFn: (id: string) => api.runScenario(id),
+    onMutate: () => {
+      // Clear stale results immediately before new request fires
+      setLastResponse(null);
+    },
     onSuccess: (data) => {
       setActiveScenarioId(data.scenario_id);
       if (data.result) {
@@ -182,6 +191,28 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onNavigate }) =>
           </div>
         </form>
       </div>
+
+      {/* Loading skeleton while gateway evaluates */}
+      {isRunning && !lastResponse && (
+        <div className="p-5 rounded-xl bg-[#111827]/90 border border-gray-700 shadow-xl space-y-4 animate-pulse">
+          <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-950/10 flex items-center space-x-3">
+            <div className="w-7 h-7 rounded-full bg-blue-500/20 shrink-0" />
+            <div className="space-y-2 flex-1">
+              <div className="h-3.5 w-48 rounded bg-gray-700" />
+              <div className="h-2.5 w-32 rounded bg-gray-800" />
+            </div>
+            <div className="h-7 w-36 rounded-lg bg-gray-800" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-2.5 w-40 rounded bg-gray-800" />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-16 rounded-lg bg-gray-800/60" />
+              <div className="h-16 rounded-lg bg-gray-800/60" />
+            </div>
+          </div>
+          <div className="h-16 rounded-lg bg-gray-800/60" />
+        </div>
+      )}
 
       {/* Real-time Explainable Decision Result Panel */}
       {lastResponse && (

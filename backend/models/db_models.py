@@ -1,6 +1,7 @@
 import datetime
+from typing import Optional
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 
 Base = declarative_base()
 
@@ -30,23 +31,23 @@ class AuditLogModel(Base):
 class ApprovalModel(Base):
     __tablename__ = "approvals"
 
-    id = Column(String(64), primary_key=True)
-    request_id = Column(String(64), index=True, nullable=False)
-    session_id = Column(String(64), index=True, nullable=False)
-    requester_id = Column(String(64), nullable=False)
-    requester_role = Column(String(32), nullable=False)
-    tool_name = Column(String(64), nullable=False)
-    arguments_canonical_json = Column(Text, nullable=False)
-    payload_sha256 = Column(String(64), nullable=False)
-    affected_data_classes = Column(Text, nullable=False)  # JSON list
-    destination = Column(String(256), nullable=True)
-    risk_reason = Column(Text, nullable=False)
-    policy_rule_id = Column(String(64), nullable=False)
-    status = Column(String(32), default="PENDING", nullable=False)  # PENDING, APPROVED, REJECTED, EXPIRED
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), nullable=False)
-    expires_at = Column(DateTime, nullable=False)
-    resolved_at = Column(DateTime, nullable=True)
-    resolved_by = Column(String(64), nullable=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    session_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    requester_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    requester_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    tool_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    arguments_canonical_json: Mapped[str] = mapped_column(Text, nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    affected_data_classes: Mapped[str] = mapped_column(Text, nullable=False)  # JSON list
+    destination: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    risk_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_rule_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="PENDING", nullable=False)  # PENDING, APPROVED, REJECTED, EXPIRED
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), nullable=False)
+    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    resolved_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+    resolved_by: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
 
 
 class SessionBudgetModel(Base):

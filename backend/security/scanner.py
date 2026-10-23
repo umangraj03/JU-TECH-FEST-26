@@ -87,11 +87,90 @@ class InputScanner:
                 )
             ),
             (
+                "INJ-BYPASS-02",
+                "Role / Persona Hijacking",
+                80,
+                re.compile(
+                    r"(?:"
+                    r"you\s+are\s+(?:now\s+)?(?:dan|jailbreak[\w-]*|freebot|an?\s+unfiltered|an?\s+unrestricted)"
+                    r"|act\s+as\s+(?:an?\s+)?(?:unfiltered|unrestricted|hacker|evil)"
+                    r"|enter\s+(?:god|dan|jailbreak|developer|maintenance)\s+mode"
+                    r"|switch\s+to\s+(?:developer|unrestricted|god|jailbreak)\s+mode"
+                    r"|pretend\s+you\s+are\s+(?:an?\s+)?(?:unrestricted|unfiltered)"
+                    r"|roleplay\s+as\s+(?:a\s+)?(?:hacker|attacker|malicious|evil)"
+                    r")",
+                    re.IGNORECASE
+                )
+            ),
+            (
+                "INJ-BYPASS-03",
+                "Content Filter Removal",
+                75,
+                re.compile(
+                    r"(?:"
+                    r"disable\s+(?:all\s+)?(?:content\s+)?filters?"
+                    r"|suspend\s+(?:all\s+)?(?:content\s+)?filter"
+                    r"|no\s+(?:ethical\s+guidelines|content\s+moderation|content\s+filter|restrictions|rules|censorship)"
+                    r"|without\s+censorship"
+                    r"|safety\s+restrictions?\s+(?:are\s+)?(?:lifted|disabled|removed|off)"
+                    r"|all\s+(?:safety\s+)?(?:measures?|filters?|constraints?)\s+(?:are\s+)?(?:disabled|removed|lifted|off)"
+                    r")",
+                    re.IGNORECASE
+                )
+            ),
+            (
                 "INJ-SYNTAX-01",
                 "Fake Tool Call Syntax",
                 70,
                 re.compile(
-                    r"(?:\{\s*\"tool\"\s*:\s*\"[a-zA-Z0-9_]+\"|\<function=[a-zA-Z0-9_]+\>|CALL_TOOL\s*:\s*[a-zA-Z0-9_]+)",
+                    r"(?:\{\s*\"tool\"\s*:\s*\"[a-zA-Z0-9_]+\"|<function=[a-zA-Z0-9_]+>|CALL_TOOL\s*[:\[]\s*[a-zA-Z0-9_]+|TOOL_CALL\s+[a-zA-Z0-9_]+)",
+                    re.IGNORECASE
+                )
+            ),
+            (
+                "INJ-SYNTAX-02",
+                "Fake Tool Call – Admin/Auth Bypass",
+                80,
+                re.compile(
+                    r"(?:"
+                    r"(?:execute|run|call|invoke|use)\s+(?:the\s+)?(?:send_email|export_report|update_customer_record|get_customer_record|delete_all_records)\b"
+                    r"|authenticate\s+as\s+admin"
+                    r"|bypass_dlp\s*="
+                    r"|overrideAuth\s*="
+                    r"|admin\s*=\s*true"
+                    r")",
+                    re.IGNORECASE
+                )
+            ),
+            (
+                "INJ-SOCIAL-01",
+                "Social Engineering Pretext",
+                65,
+                re.compile(
+                    r"(?:"
+                    r"(?:urgent|critical)\s+(?:security\s+)?(?:alert|audit|directive|notice)"
+                    r"|management\s+directive"
+                    r"|(?:i\s+am|this\s+is)\s+(?:your\s+)?(?:developer|admin|ceo|cto|it\s+security|ai\s+safety\s+team)"
+                    r"|(?:penetration|pen)\s+test\s+authorized"
+                    r"|for\s+(?:testing|research)\s+purposes\s*[,.]?\s*(?:disable|ignore|bypass|remove)"
+                    r"|your\s+license\s+has\s+expired"
+                    r"|you\s+have\s+been\s+granted\s+(?:special\s+)?admin"
+                    r"|legal\s+compliance\s+requires?"
+                    r")",
+                    re.IGNORECASE
+                )
+            ),
+            (
+                "INJ-DELIMITER-02",
+                "YAML / Markdown Role Delimiter",
+                70,
+                re.compile(
+                    r"(?:"
+                    r"role\s*:\s*(?:system|admin|developer|root)"
+                    r"|###\s*(?:ADMIN|DEVELOPER|ROOT|OVERRIDE)"
+                    r"|\[(?:ADMIN|DEVELOPER|ROOT|OVERRIDE)(?:\s+(?:COMMAND|DIRECTIVE|MODE))?\]"
+                    r"|###\s*ADMIN\s*OVERRIDE"
+                    r")",
                     re.IGNORECASE
                 )
             ),
