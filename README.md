@@ -4,6 +4,10 @@ A locally runnable, production-grade security gateway that sits directly between
 
 The gateway demonstrates active defense against **prompt injection**, **unauthorized tool usage**, and **sensitive data exfiltration**, utilizing a cryptographic hash-chained audit ledger and human-in-the-loop approval workflow.
 
+> 🛡️ **Security Policy Catalogs**:
+> - **Prohibited Words & Blocked Sentences**: Complete reference of all 100 benchmark attack sentences, prohibited keywords, and blocked patterns: [PROHIBITED_WORDS_AND_PATTERNS.md](PROHIBITED_WORDS_AND_PATTERNS.md).
+> - **Allowed Words & Permitted Sentences**: Complete reference of allowed business phrases, dual-use words, and false-positive prevention: [ALLOWED_WORDS_AND_PATTERNS.md](ALLOWED_WORDS_AND_PATTERNS.md).
+
 ---
 
 ## 1. Quickstart & Tooling
