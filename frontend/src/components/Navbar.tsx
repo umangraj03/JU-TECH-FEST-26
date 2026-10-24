@@ -71,6 +71,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRole, onRoleChange, onRef
           ))}
         </div>
 
+        {/* Stitch UI Design Link */}
+        <a
+          href="/stitch_demo.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open complete high-fidelity Stitch UI design"
+          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-red-200 hover:text-white bg-red-950/40 hover:bg-red-900/60 rounded-lg border border-red-500/40 transition shadow-sm"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+          <span>Stitch UI</span>
+          <span className="text-[10px] text-red-300">↗</span>
+        </a>
+
         {/* Demo Reset Button */}
         <button
           onClick={handleReset}

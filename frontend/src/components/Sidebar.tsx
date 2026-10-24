@@ -61,15 +61,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, pendin
         })}
       </nav>
 
-      {/* Trust boundary card */}
-      <div className="p-3.5 rounded-xl bg-[#111827]/80 border border-gray-800/80 text-xs text-gray-400 space-y-1.5">
-        <div className="flex items-center space-x-1.5 text-gray-300 font-semibold text-[11px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-          <span>Security Invariant</span>
+      <div className="space-y-3">
+        {/* Stitch UI Prototype Link */}
+        <a
+          href="/stitch_demo.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-red-950/40 via-burgundy/20 to-purple-950/40 border border-red-500/30 hover:border-red-400/60 text-xs text-red-200 transition-all group shadow-sm hover:shadow-red-500/10"
+        >
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+            <span className="font-semibold text-gray-200 group-hover:text-white">Stitch UI Design</span>
+          </div>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 group-hover:bg-red-500/30">
+            Open ↗
+          </span>
+        </a>
+
+        {/* Trust boundary card */}
+        <div className="p-3.5 rounded-xl bg-[#111827]/80 border border-gray-800/80 text-xs text-gray-400 space-y-1.5">
+          <div className="flex items-center space-x-1.5 text-gray-300 font-semibold text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+            <span>Security Invariant</span>
+          </div>
+          <p className="text-[11px] leading-relaxed text-gray-400">
+            Tools are isolated and callable strictly through <code className="text-blue-400 font-mono">gateway.execute()</code>.
+          </p>
         </div>
-        <p className="text-[11px] leading-relaxed text-gray-400">
-          Tools are isolated and callable strictly through <code className="text-blue-400 font-mono">gateway.execute()</code>.
-        </p>
       </div>
     </aside>
   );
