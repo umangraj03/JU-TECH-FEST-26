@@ -1,3 +1,4 @@
+# JU TECH FEST 2026 HACKATHON
 # CY-03 — AI Agent Security Guard
 
 A locally runnable, production-grade security gateway that sits directly between a simulated enterprise business AI agent and its tools. It inspects user input, retrieved knowledge documents, proposed tool calls, and outgoing data, returning an explainable decision (`ALLOW` / `BLOCK` / `REQUIRE_APPROVAL`) for each operation.
